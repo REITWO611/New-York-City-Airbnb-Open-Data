@@ -1,0 +1,176 @@
+## Rachel Li (SHU-YING, LI) 2023.10.14 ALY6000 Introduction of Analytics Project 4
+
+destination_path <- "/Users/rachel/Desktop/ALY 6000 Project 4 Independent Data Analysis/AB_NYC_2019.csv"
+nyc_data <- read.csv(destination_path)
+
+str(nyc_data)
+head(nyc_data)
+any(is.na(nyc_data))
+
+
+
+nyc_data$reviews_per_month[is.na(nyc_data$reviews_per_month)] <- 0
+
+nyc_data$last_review <- as.Date(nyc_data$last_review)
+
+any(is.na(nyc_data))
+
+cols_with_missing_values <- colnames(nyc_data)[colSums(is.na(nyc_data)) > 0]
+cols_with_missing_values
+
+
+library(dplyr)
+
+
+missing_last_review <- is.na(nyc_data$last_review)
+
+latest_review_date <- max(nyc_data$last_review, na.rm = TRUE)
+
+nyc_data$last_review[missing_last_review] <- latest_review_date
+
+price_std_threshold <- 3
+
+
+price_mean <- mean(nyc_data$price)
+price_std <- sd(nyc_data$price)
+
+outliers_price <- which(nyc_data$price > price_mean + price_std_threshold * price_std | nyc_data$price < price_mean - price_std_threshold * price_std)
+
+nyc_data <- nyc_data[-outliers_price, ]
+
+min_nights_std_threshold <- 3
+
+min_nights_mean <- mean(nyc_data$minimum_nights)
+min_nights_std <- sd(nyc_data$minimum_nights)
+
+outliers_min_nights <- which(nyc_data$minimum_nights > min_nights_mean + min_nights_std_threshold * min_nights_std | nyc_data$minimum_nights < min_nights_mean - min_nights_std_threshold * min_nights_std)
+
+nyc_data <- nyc_data[-outliers_min_nights, ]
+
+
+# Q1: Which areas have the best business opportunities, and why?
+ 
+library(ggplot2)
+
+ 
+neighborhood_counts <- nyc_data %>%
+  group_by(neighbourhood_group) %>%
+  summarise(count = n())
+
+ 
+custom_colors <- c("#B03060", "#DB7093", "#FFB6C1", "#FFE4E1", "#CDB7B5")
+
+ 
+neighborhood_pie <- ggplot(neighborhood_counts, aes(x = "", y = count, fill = neighbourhood_group)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y") +
+  scale_fill_manual(values = custom_colors) +  # 使用自定义颜色
+  labs(
+    title = "Listings Distribution Across Neighborhood Groups",
+    fill = "Neighborhood Group"
+  ) +
+  theme_minimal()
+
+ 
+print(neighborhood_pie)
+ 
+availability_price_scatter <- ggplot(nyc_data, aes(x = availability_365, y = price, color = neighbourhood_group)) +
+  geom_point(alpha = 0.5) +
+  scale_color_manual(values = c("#B03060", "#DB7093", "#FFB6C1", "#FFE4E1", "#CDB7B5")) +  # 自定义颜色
+  labs(
+    title = "Relationship Between Price and Availability in NYC Airbnb Listings",
+    x = "Availability (in days)",
+    y = "Price",
+    color = "Neighbourhood Group"
+  ) +
+  theme_minimal()
+
+ 
+print(availability_price_scatter)
+ 
+
+
+# Q2: Is there any relationship between the price, the number of reviews, and the number of minimum nights?
+ 
+scatterplot <- ggplot(nyc_data, aes(x = price, y = number_of_reviews, color = minimum_nights)) +
+  geom_point() +
+  scale_color_gradient(low = "mediumturquoise", high = "darkgrey") +   
+  labs(
+    title = "Relationship Between Price, Number of Reviews,\nand Minimum Nights",
+    x = "Price",
+    y = "Number of Reviews",
+    color = "Minimum Nights"
+  ) +
+  theme_minimal()
+ 
+print(scatterplot)
+
+# Q3: What is the price distribution for different room types?
+
+boxplot <- ggplot(nyc_data, aes(x = room_type, y = price, fill = room_type)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("#FFFF00", "#FFD700", "#FFA500")) + 
+  labs(
+    title = "Room Type Price Variation",
+    x = "Room Type",
+    y = "Price"
+  ) +
+  theme_minimal()
+
+print(boxplot)
+
+
+# Q3: Which Neighborhood Has the Highest Number of Listings?
+
+neighborhood_counts <- nyc_data %>%
+  group_by(neighbourhood) %>%
+  summarise(number_of_listings = n())
+
+
+neighborhood_counts <- neighborhood_counts %>%
+  arrange(desc(number_of_listings))
+
+
+top_n_neighborhoods <- head(neighborhood_counts, 10)
+
+
+neighborhood_barplot <- ggplot(top_n_neighborhoods, aes(x = reorder(neighbourhood, -number_of_listings), y = number_of_listings)) +
+  geom_bar(stat = "identity", fill = "lightsalmon") +
+  labs(
+    title = "Top Neighborhoods by Number of Listings",
+    x = "Neighborhood",
+    y = "Number of Listings"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+print(neighborhood_barplot)
+
+
+
+
+# Q5:What insights can we gain from the scatter plot depicting hosts' average price vs. total reviews?
+
+host_summary <- nyc_data %>%
+  group_by(host_id) %>%
+  summarise(
+    average_price = mean(price, na.rm = TRUE),  # 计算平均价格
+    total_reviews = sum(number_of_reviews, na.rm = TRUE)  # 计算总评论数量
+  )
+
+
+head(host_summary)
+
+
+scatterplot <- ggplot(host_summary, aes(x = average_price, y = total_reviews)) +
+  geom_point(color = "mediumpurple") +  # 设置颜色为浅紫色
+  labs(
+    title = "Hosts' Average Price vs. Total Reviews",
+    x = "Average Price",
+    y = "Total Reviews"
+  )
+
+
+print(scatterplot)
+
