@@ -20,7 +20,7 @@ cols_with_missing_values
 
 
 library(dplyr)
-
+ 
 
 missing_last_review <- is.na(nyc_data$last_review)
 
@@ -51,7 +51,6 @@ nyc_data <- nyc_data[-outliers_min_nights, ]
 # Q1: Which areas have the best business opportunities, and why?
  
 library(ggplot2)
-
  
 neighborhood_counts <- nyc_data %>%
   group_by(neighbourhood_group) %>%
@@ -85,7 +84,6 @@ availability_price_scatter <- ggplot(nyc_data, aes(x = availability_365, y = pri
   ) +
   theme_minimal()
 
- 
 print(availability_price_scatter)
  
 
